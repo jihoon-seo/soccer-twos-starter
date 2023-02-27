@@ -1,7 +1,11 @@
 envs/
 ray_results/
 ceia_baseline_agent/
+ceia_baseline_agent.zip
+agent_modules/ceia_baseline_agent/
+agent_modules/ceia_baseline_agent.zip
 data/
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
