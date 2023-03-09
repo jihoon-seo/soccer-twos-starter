@@ -5,14 +5,22 @@ import onnxruntime as rt
 
 import soccer_twos
 
-class OnnxAgent(soccer_twos.AgentInterface):
+class OnnxTeamAgent(soccer_twos.AgentInterface):
     def __init__(self, env):
         super().__init__()
-        self.name = "onnx"
+        self.name: str = "onnx_Team"
         
         self.sess = rt.InferenceSession("./trained_models/SoccerTwos.onnx")
         # self.input_name = self.sess.get_inputs()[0].name
         # self.label_name = self.sess.get_outputs()[0].name
+
+        self.action_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
+        # print("action_mask.ndim: {}".format(action_mask.ndim)) # for debug
+        # print("action_mask.shape: {}".format(action_mask.shape)) # for debug
+
+        self.action_mask = np.vstack((self.action_mask, self.action_mask))
+        # print("action_mask.ndim: {}".format(action_mask.ndim)) # for debug
+        # print("action_mask.shape: {}".format(action_mask.shape)) # for debug
 
     def act(self, observation: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
         """The act method is called when the agent is asked to act.
@@ -55,17 +63,9 @@ class OnnxAgent(soccer_twos.AgentInterface):
         # print("X_test.ndim: {}".format(X_test.ndim)) # for debug
         # print("X_test.shape: {}".format(X_test.shape)) # for debug
 
-        action_mask = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
-        # print("action_mask.ndim: {}".format(action_mask.ndim)) # for debug
-        # print("action_mask.shape: {}".format(action_mask.shape)) # for debug
-
-        action_mask = np.vstack((action_mask, action_mask))
-        # print("action_mask.ndim: {}".format(action_mask.ndim)) # for debug
-        # print("action_mask.shape: {}".format(action_mask.shape)) # for debug
-
         pred = self.sess.run(["discrete_actions"], {
             "vector_observation": X_test.astype(np.float32),
-            "action_masks": action_mask.astype(np.float32),
+            "action_masks": self.action_mask.astype(np.float32),
             })[0]
         # print("pred.ndim: {}".format(pred.ndim)) # for debug
         # print("pred.shape: {}".format(pred.shape)) # for debug

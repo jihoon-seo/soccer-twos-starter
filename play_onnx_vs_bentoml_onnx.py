@@ -1,6 +1,8 @@
 import soccer_twos
 import onnxruntime as rt
 import numpy as np
+import bentoml
+import onnx
 
 env = soccer_twos.make(render=True)
 print("Observation Space: ", env.observation_space.shape) # (336,)
@@ -37,6 +39,23 @@ sess = rt.InferenceSession("./trained_models/SoccerTwos.onnx")
 - action_output_shape: 1
 """
 
+# Save onnx model from SoccerTwos.onnx as a BentoML model
+onnx_model = onnx.load("./trained_models/SoccerTwos.onnx")
+signatures = {
+    "run": {"batchable": True},
+}
+# bentoml.onnx.save_model("soccer_twos_onnx", onnx_model, signatures=signatures)
+
+# Approach 1
+# # runner = bentoml.onnx.get("soccer_twos_onnx:latest").to_runner()
+# providers=["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+# bento_model = bentoml.onnx.get("soccer_twos_onnx")
+# runner = bento_model.with_options(providers=providers).to_runner()
+# runner.init_local()
+
+# Approach 2
+ort_session = bentoml.onnx.load_model("soccer_twos_onnx")
+
 while True:
     
     # Team 1
@@ -64,12 +83,21 @@ while True:
 #     print("X_test2.ndim: {}".format(X_test2.ndim)) # for debug
 #     print("X_test2.shape: {}".format(X_test2.shape)) # for debug
 
-    pred2 = sess.run(["discrete_actions"], {
-            "vector_observation": X_test2.astype(np.float32),
-            "action_masks": action_mask.astype(np.float32),
-            })[0]
+    # pred2 = sess.run(["discrete_actions"], {
+    #         "vector_observation": X_test2.astype(np.float32),
+    #         "action_masks": action_mask.astype(np.float32),
+    #         })[0]
 #     print("pred2.ndim: {}".format(pred2.ndim)) # for debug
 #     print("pred2.shape: {}".format(pred2.shape)) # for debug
+
+    # Predicting lines matched with Approach 1 above
+    # pred2 = runner.run.run(X_test2)
+
+    # Predicting lines matched with Approach 2 above
+    pred2 = ort_session.run(["discrete_actions"], {
+             "vector_observation": X_test2.astype(np.float32),
+             "action_masks": action_mask.astype(np.float32),
+             })[0]
 
     actions = {
             0: np.array((np.argmax(pred1[0][:3]), np.argmax(pred1[0][3:6]), np.argmax(pred1[0][6:9]))), # Team 1, Agent 1
