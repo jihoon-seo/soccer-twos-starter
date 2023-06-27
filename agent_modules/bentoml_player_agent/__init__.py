@@ -1,0 +1,1 @@
+from .bentoml_player_agent import BentomlPlayerAgent
